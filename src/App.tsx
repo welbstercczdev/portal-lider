@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Upload, FileJson, CheckCircle, AlertTriangle, Lock, Send, LogOut } from 'lucide-react';
+import { Upload, FileJson, CheckCircle, AlertTriangle, Lock, Send, LogOut, Loader2, ShieldCheck } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
 import InstallPWA from './components/InstallPWA';
 
 // *** COLAR SUA URL DO GOOGLE APPS SCRIPT AQUI ***
-const API_URL = "https://script.google.com/macros/s/AKfycbypl9vj4tms_-C1LUlrdCo8xecw2Oiie_jaUPSHYm-5zQm6638X5a4_oaYktu6C6zFF/exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbypl9vj4tms_-C1LUlrdCo8xecw2Oiie_jaUPSHYm-5zQm6638X5a4_oaYktu6C6zFF/exec";
 
 function App() {
   const [file, setFile] = useState<File | null>(null);
@@ -14,7 +14,6 @@ function App() {
   const [status, setStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
-  // Salva credenciais para facilitar (opcional)
   const saveCredentials = () => {
     localStorage.setItem('leaderName', leaderName);
     localStorage.setItem('apiToken', apiToken);
@@ -30,14 +29,16 @@ function App() {
         if (Array.isArray(data)) {
           setJsonData(data);
           setStatus('idle');
-          setMessage(`Arquivo válido: ${data.length} registros.`);
+          setMessage(`Arquivo válido: ${data.length} registros prontos.`);
         } else {
+          setJsonData(null);
           setStatus('error');
           setMessage("Formato inválido. O arquivo deve conter uma lista de coletas.");
         }
       } catch (err) {
+        setJsonData(null);
         setStatus('error');
-        setMessage("Erro ao ler o arquivo. Verifique se é um JSON válido.");
+        setMessage("Erro ao ler arquivo. Verifique se é um JSON válido.");
       }
     }
   };
@@ -45,13 +46,13 @@ function App() {
   const handleUpload = async () => {
     if (!jsonData || !leaderName || !apiToken) {
       setStatus('error');
-      setMessage("Preencha todos os campos e selecione um arquivo.");
+      setMessage("Preencha as credenciais e selecione um arquivo.");
       return;
     }
 
     saveCredentials();
     setStatus('uploading');
-    setMessage("Conectando ao banco de dados seguro...");
+    setMessage("Estabelecendo conexão segura...");
 
     try {
       const payload = {
@@ -75,129 +76,166 @@ function App() {
         setFile(null);
         setJsonData(null);
       } else {
-        throw new Error(result.error || "Acesso negado ou erro no servidor.");
+        throw new Error(result.error || "Acesso negado ou token inválido.");
       }
     } catch (error: any) {
       console.error(error);
       setStatus('error');
-      setMessage("Falha no envio: " + error.message);
+      setMessage("Falha na conexão: " + error.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-300 font-sans">
+    // CONTAINER PRINCIPAL: Ocupa 100% da tela, centraliza o conteúdo
+    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4 transition-colors duration-300">
       
-      <div className="w-full max-w-md md:max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col">
+      {/* CARD CENTRAL: Define a largura máxima e responsividade */}
+      <div className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden transition-all duration-300">
         
-        {/* Header Seguro */}
-        <div className="bg-slate-900 p-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
-              <Lock size={24} className="text-emerald-400" />
+        {/* Header com Gradiente Suave */}
+        <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 bg-emerald-500/10 rounded-xl backdrop-blur-md border border-emerald-500/20 shadow-lg">
+              <ShieldCheck size={28} className="text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white leading-tight">Portal do Líder</h1>
-              <p className="text-xs text-slate-400">Sincronização Segura</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Portal do Líder</h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <p className="text-xs text-emerald-100/70 font-medium tracking-wide">SISTEMA SEGURO</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <InstallPWA />
             <ThemeToggle />
           </div>
         </div>
 
-        <div className="p-6 md:p-8 space-y-6">
+        {/* Corpo do App */}
+        <div className="p-6 sm:p-8 space-y-8">
           
-          {/* Inputs de Credenciais */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Líder</label>
+          {/* Seção de Login (Grid Responsivo) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ml-1">
+                Nome do Líder
+              </label>
               <input 
                 type="text" 
                 value={leaderName}
                 onChange={(e) => setLeaderName(e.target.value)}
-                placeholder="Ex: Supervisor Carlos"
-                className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-gray-900 dark:text-white transition-all"
+                placeholder="Ex: Supervisor Silva"
+                className="w-full p-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-gray-900 dark:text-white transition-all placeholder:text-gray-400"
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Token de Acesso</label>
-              <input 
-                type="password" 
-                value={apiToken}
-                onChange={(e) => setApiToken(e.target.value)}
-                placeholder="Senha Mestra"
-                className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-gray-900 dark:text-white transition-all"
-              />
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ml-1">
+                Token de Acesso
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock size={18} className="text-gray-400" />
+                </div>
+                <input 
+                  type="password" 
+                  value={apiToken}
+                  onChange={(e) => setApiToken(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 p-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-gray-900 dark:text-white transition-all placeholder:text-gray-400"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-100 dark:border-gray-800"></div>
+          <div className="h-px bg-gray-100 dark:bg-gray-800 w-full"></div>
 
           {/* Área de Upload */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Arquivo de Coletas (.json)</label>
+          <div className="space-y-3">
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ml-1">
+              Importar Dados
+            </label>
             
             {!file ? (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-8 h-8 mb-3 text-gray-400 group-hover:text-brand-500 transition-colors" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Toque para selecionar o arquivo</p>
+              <label className="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl cursor-pointer bg-gray-50/50 dark:bg-gray-800/30 hover:bg-gray-100 dark:hover:bg-gray-800/80 transition-all group overflow-hidden">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4 z-10">
+                  <div className="p-4 bg-white dark:bg-gray-700 rounded-full shadow-md mb-3 group-hover:scale-110 group-hover:shadow-lg transition-all duration-300">
+                     <Upload className="w-6 h-6 text-brand-500" />
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-200 font-semibold">
+                    Clique para selecionar o arquivo JSON
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Exportado do aplicativo CensoPet
+                  </p>
                 </div>
+                {/* Efeito visual ao passar o mouse */}
+                <div className="absolute inset-0 bg-brand-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <input type="file" className="hidden" accept=".json" onChange={handleFileChange} />
               </label>
             ) : (
-              <div className="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-xl border border-blue-100 dark:border-blue-900/30 animate-fade-in">
-                <FileJson size={24} className="mr-3 flex-shrink-0" />
+              <div className="flex items-center p-4 bg-brand-50 dark:bg-sky-900/20 text-brand-900 dark:text-sky-100 rounded-2xl border border-brand-100 dark:border-sky-800 animate-fade-in shadow-sm relative group">
+                <div className="p-3 bg-white dark:bg-sky-900/50 rounded-xl mr-4 shadow-sm">
+                   <FileJson size={24} className="text-brand-600 dark:text-sky-400" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold truncate">{file.name}</p>
-                  <p className="text-xs opacity-70">{(file.size / 1024).toFixed(2)} KB</p>
+                  <p className="text-xs opacity-70 mt-0.5">{(file.size / 1024).toFixed(1)} KB &bull; Pronto para sincronizar</p>
                 </div>
                 <button 
                   onClick={() => { setFile(null); setJsonData(null); setMessage(''); setStatus('idle'); }} 
-                  className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg transition-colors"
+                  className="p-2 hover:bg-white/60 dark:hover:bg-sky-800/50 rounded-lg transition-colors text-brand-700/60 dark:text-sky-200/60 hover:text-brand-800 dark:hover:text-white"
                 >
-                  <LogOut size={18} />
+                  <LogOut size={20} />
                 </button>
               </div>
             )}
           </div>
 
-          {/* Status Message */}
+          {/* Mensagens de Feedback */}
           {message && (
-            <div className={`p-4 rounded-xl text-sm flex items-start gap-3 animate-fade-in ${
-              status === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 
-              status === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 
-              'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+            <div className={`p-4 rounded-xl text-sm flex items-start gap-3 animate-fade-in border shadow-sm ${
+              status === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border-red-200 dark:border-red-900/50' : 
+              status === 'success' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-900/50' : 
+              'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-900/50'
             }`}>
-              {status === 'success' ? <CheckCircle size={18} className="mt-0.5 flex-shrink-0" /> : 
-               status === 'error' ? <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" /> : null}
-              <span className="font-medium">{message}</span>
+              {status === 'success' ? <CheckCircle size={20} className="mt-0.5 flex-shrink-0" /> : 
+               status === 'error' ? <AlertTriangle size={20} className="mt-0.5 flex-shrink-0" /> : 
+               <Loader2 size={20} className="mt-0.5 flex-shrink-0 animate-spin" />}
+              <span className="font-medium leading-relaxed">{message}</span>
             </div>
           )}
 
-          {/* Botão de Envio */}
+          {/* Botão Principal */}
           <button
             onClick={handleUpload}
             disabled={!jsonData || status === 'uploading'}
-            className="w-full py-4 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-brand-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
+            className={`w-full py-4 px-6 rounded-xl font-bold shadow-lg transition-all transform hover:translate-y-[-2px] active:translate-y-[0px] flex items-center justify-center gap-3 text-base ${
+              status === 'uploading' 
+               ? 'bg-slate-700 text-slate-300 cursor-wait'
+               : 'bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white shadow-brand-500/30'
+            } disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none`}
           >
             {status === 'uploading' ? (
-              <span className="animate-pulse">Enviando Dados...</span>
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                <span>Processando Envio...</span>
+              </>
             ) : (
               <>
-                <Send size={18} />
-                Sincronizar Banco de Dados
+                <Send size={20} />
+                <span>Enviar para Banco de Dados</span>
               </>
             )}
           </button>
-
         </div>
         
-        {/* Footer */}
-        <div className="bg-gray-50 dark:bg-gray-950 p-4 text-center text-xs text-gray-400 dark:text-gray-600 border-t border-gray-100 dark:border-gray-800">
-           Área Restrita &bull; Apenas Pessoal Autorizado
+        {/* Rodapé */}
+        <div className="bg-gray-50 dark:bg-slate-950/50 p-4 text-center">
+           <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-600 font-medium">
+             &copy; {new Date().getFullYear()} CensoPet SJC &bull; Módulo Administrativo v1.2
+           </p>
         </div>
       </div>
     </div>
