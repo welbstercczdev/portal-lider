@@ -4,7 +4,7 @@ import ThemeToggle from './components/ThemeToggle';
 import InstallPWA from './components/InstallPWA';
 
 // *** COLAR SUA URL DO GOOGLE APPS SCRIPT AQUI ***
-const API_URL = "https://script.google.com/macros/s/AKfycbypl9vj4tms_-C1LUlrdCo8xecw2Oiie_jaUPSHYm-5zQm6638X5a4_oaYktu6C6zFF/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxF14sEgps3ZRWBpaKto4CNrwE721ssgVsyhMhckRair6QGdh5CIMpDXhs8A8JQD-OO/exec";
 
 function App() {
   const [file, setFile] = useState<File | null>(null);
